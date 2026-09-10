@@ -14,7 +14,7 @@
       "author": "15373426383s-wq",
       "homepage": "https://github.com/15373426383s-wq/dian115-qb2tr-plugin",
       "package_url": "https://github.com/15373426383s-wq/dian115-qb2tr-plugin/releases/download/v1.0.0/qb2tr-transfer.d115p",
-      "sha256": "68abd965d0d4af2f93619a9b6e6b8fab936b66e91caf2f3efbc7d5791e65467f",
+      "sha256": "e57d82173a1de72d316ddd1685f76d8efe0c6beea47c78ec5a1dc42483303412",
       "runtime": {
         "kind": "wasm",
         "protocol": "dian115:wasm@1",

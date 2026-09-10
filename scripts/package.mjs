@@ -96,7 +96,7 @@ const integrityFiles = files
     size: f.content.length,
     sha256: crypto.createHash('sha256').update(f.content).digest('hex'),
   }))
-  .sort((a, b) => a.path.localeCompare(b.path, 'en'));
+  .sort((a, b) => Buffer.compare(Buffer.from(a.path, 'utf8'), Buffer.from(b.path, 'utf8')));
 
 const integrity = {
   schema_version: 1,
