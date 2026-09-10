@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import JSZip from 'jszip';
+import yazl from 'yazl';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,22 +127,22 @@ const signatureObj = {
 };
 const signatureStr = JSON.stringify(signatureObj, null, 2);
 
-// ========== 6. 打包 ZIP ==========
-const zip = new JSZip();
+// ========== 6. 打包 ZIP（yazl 不生成目录条目，符合 DIAN115 规范）==========
+const zipfile = new yazl.ZipFile();
 for (const f of files) {
-  zip.file(f.path, f.content);
+  zipfile.addBuffer(f.content, f.path, { compress: true });
 }
-zip.file('integrity.json', integrityStr);
-zip.file('signature.json', signatureStr);
-
-const zipBuffer = await zip.generateAsync({
-  type: 'nodebuffer',
-  compression: 'DEFLATE',
-  compressionOptions: { level: 9 },
-});
+zipfile.addBuffer(Buffer.from(integrityStr, 'utf8'), 'integrity.json', { compress: true });
+zipfile.addBuffer(Buffer.from(signatureStr, 'utf8'), 'signature.json', { compress: true });
 
 fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-fs.writeFileSync(OUT_PATH, zipBuffer);
+await new Promise((resolve, reject) => {
+  zipfile.outputStream.pipe(fs.createWriteStream(OUT_PATH))
+    .on('close', resolve)
+    .on('error', reject);
+  zipfile.end();
+});
+const zipBuffer = fs.readFileSync(OUT_PATH);
 const packageSha256 = crypto.createHash('sha256').update(zipBuffer).digest('hex');
 
 console.log('\n打包完成:', OUT_PATH);
@@ -151,9 +151,14 @@ console.log('包 SHA-256:', packageSha256);
 
 // ========== 7. 更新市场索引 sha256 ==========
 const marketPath = path.join(ROOT, 'plugin-market', 'index.json');
-const marketStr = fs.readFileSync(marketPath, 'utf8');
-const updatedMarket = marketStr.replace('__PACKAGE_SHA256__', packageSha256);
-fs.writeFileSync(marketPath, updatedMarket);
+let marketStr = fs.readFileSync(marketPath, 'utf8');
+// 兼容首次运行（占位符）和后续运行（已有 sha256）
+if (marketStr.includes('__PACKAGE_SHA256__')) {
+  marketStr = marketStr.replace('__PACKAGE_SHA256__', packageSha256);
+} else {
+  marketStr = marketStr.replace(/"sha256":\s*"[0-9a-f]{64}"/, `"sha256": "${packageSha256}"`);
+}
+fs.writeFileSync(marketPath, marketStr);
 console.log('已更新 plugin-market/index.json 的 sha256');
 
 // ========== 8. 验证签名 ==========
