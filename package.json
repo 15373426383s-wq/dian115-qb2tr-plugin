@@ -4,5 +4,8 @@
   "type": "module",
   "devDependencies": {
     "jszip": "^3.10.1"
+  },
+  "dependencies": {
+    "yazl": "^3.3.1"
   }
 }

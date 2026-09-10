@@ -1,4 +1,5 @@
-// 从 wasm 二进制的 export section 中删除 _start 导出，使其成为 reactor 模块
+// 将 wasm 的 _start 导出重命名为 _initialize，使其成为 reactor 模块
+// wazero 会在实例化后自动调用 _initialize 来初始化 Go 运行时
 import fs from 'node:fs';
 
 const file = process.argv[2] || 'plugin.wasm';
@@ -25,14 +26,14 @@ function writeLEB128(value) {
   return Buffer.from(bytes);
 }
 
-let offset = 8; // skip magic(4) + version(4)
+let offset = 8;
 while (offset < buf.length) {
   const sectionIdPos = offset;
   const sectionId = buf[offset++];
   const { value: sectionLen, offset: contentStart } = readLEB128(buf, offset);
   const sectionEnd = contentStart + sectionLen;
 
-  if (sectionId === 7) { // export section
+  if (sectionId === 7) {
     let pos = contentStart;
     const { value: numExports, offset: exportsStart } = readLEB128(buf, pos);
     pos = exportsStart;
@@ -44,11 +45,11 @@ while (offset < buf.length) {
       pos = nameStart;
       const name = buf.toString('utf8', pos, pos + nameLen);
       pos += nameLen;
-      pos++; // kind
+      pos++;
       const { offset: afterIndex } = readLEB128(buf, pos);
       pos = afterIndex;
       if (name === '_start') {
-        startEntry = { start: entryStart, end: pos };
+        startEntry = { start: entryStart, nameStart, nameLen, end: pos };
       }
     }
 
@@ -57,20 +58,29 @@ while (offset < buf.length) {
       process.exit(0);
     }
 
-    // 构建新的 export section content
-    const newNumExportsBytes = writeLEB128(numExports - 1);
+    // 构建新的 export entry：_initialize 替换 _start
+    const newName = Buffer.from('_initialize', 'utf8');
+    const newNameLen = writeLEB128(newName.length);
+    const kindByte = buf.slice(startEntry.nameStart + startEntry.nameLen, startEntry.nameStart + startEntry.nameLen + 1);
+    const indexBytes = buf.slice(startEntry.nameStart + startEntry.nameLen + 1, startEntry.end);
+
+    const newEntry = Buffer.concat([newNameLen, newName, kindByte, indexBytes]);
+
     const contentBefore = buf.slice(exportsStart, startEntry.start);
     const contentAfter = buf.slice(startEntry.end, sectionEnd);
-    const newContent = Buffer.concat([newNumExportsBytes, contentBefore, contentAfter]);
+    const newContent = Buffer.concat([
+      writeLEB128(numExports),
+      contentBefore,
+      newEntry,
+      contentAfter,
+    ]);
 
-    // 构建新 section
     const newSection = Buffer.concat([
       Buffer.from([7]),
       writeLEB128(newContent.length),
       newContent,
     ]);
 
-    // 拼接最终文件
     const result = Buffer.concat([
       buf.slice(0, sectionIdPos),
       newSection,
@@ -78,7 +88,7 @@ while (offset < buf.length) {
     ]);
 
     fs.writeFileSync(file, result);
-    console.log(`Removed _start export. Size: ${buf.length} -> ${result.length} bytes`);
+    console.log(`Renamed _start -> _initialize. Size: ${buf.length} -> ${result.length} bytes`);
     process.exit(0);
   }
 
