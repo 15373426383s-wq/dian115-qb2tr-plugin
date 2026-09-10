@@ -1,0 +1,8 @@
+{
+  "name": "qb2tr-plugin-build",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "jszip": "^3.10.1"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "qb2tr-plugin-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "naive-ui": "^2.38.0",
+    "@lucide/vue": "^1.16.0"
+  },
+  "devDependencies": {
+    "vue": "^3.4.0",
+    "naive-ui": "^2.38.0",
+    "@lucide/vue": "^1.16.0",
+    "@originjs/vite-plugin-federation": "^1.4.1",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "vite": "^6.4.3",
+    "typescript": "^5.0.0",
+    "vue-tsc": "^2.0.0"
+  }
+}

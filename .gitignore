@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+*.pem
+*.key
+signature.json
+integrity.json
+.env
+runtime/plugin.wasm
+frontend/dist/

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://raw.githubusercontent.com/madbrolab/dian115/main/docs/plugin-platform/manifest.schema.json",
+  "schema_version": 1,
+  "id": "com.15373426383s-wq.qb2tr-transfer",
+  "name": "QB→TR自动转移做种",
+  "version": "1.0.0",
+  "description": "自动将 qBittorrent 中已完成的任务转移到 Transmission 继续做种",
+  "default_locale": "zh-CN",
+  "publisher": {
+    "name": "15373426383s-wq",
+    "key_id": "__KEY_ID__"
+  },
+  "compatibility": {
+    "dian115": ">=3.8.51 <4.0.0",
+    "plugin_api": "^2.0"
+  },
+  "runtime": {
+    "kind": "wasm",
+    "entry": "runtime/plugin.wasm",
+    "protocol": "dian115:wasm@1",
+    "startup_timeout_ms": 10000,
+    "shutdown_timeout_ms": 5000,
+    "timeout_ms": 60000,
+    "background_timeout_ms": 300000,
+    "memory_mb": 64,
+    "max_concurrency": 4,
+    "restart_policy": "on-failure"
+  },
+  "permissions": {
+    "apis": [],
+    "network": [
+      {
+        "origin": "http://qb:8080",
+        "methods": ["GET", "POST"],
+        "proxy_mode": "direct",
+        "reason": "访问 qBittorrent Web API 获取已完成任务列表并删除任务"
+      },
+      {
+        "origin": "http://tr:9091",
+        "methods": ["GET", "POST"],
+        "proxy_mode": "direct",
+        "reason": "访问 Transmission RPC 添加做种任务"
+      }
+    ]
+  },
+  "ui": {
+    "mode": "federation",
+    "federation": {
+      "entry": "frontend/dist/assets/remoteEntry.js",
+      "assets_root": "frontend/dist/assets",
+      "module": "./AppPage"
+    }
+  },
+  "homepage": "https://github.com/15373426383s-wq/dian115-qb2tr-plugin",
+  "repository": "https://github.com/15373426383s-wq/dian115-qb2tr-plugin",
+  "license": "MIT",
+  "tags": ["qBittorrent", "Transmission", "做种", "转移"]
+}
